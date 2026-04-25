@@ -1,9 +1,16 @@
 .ONESHELL:
 .SHELL := /bin/bash
-.PHONY: setup deploy vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-minio setup-filebrowser setup-nginx setup-ttyd setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-logrotate setup-format-external-hdd
+.PHONY: setup uv-sync deploy vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-minio setup-filebrowser setup-nginx setup-ttyd setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-logrotate setup-format-external-hdd
 
 ANSIBLE_PASSWORD_FILE=$(shell pwd)/.ansible-vault-password
 KEYS_DIR := $(shell pwd)/keys
+
+# Sync local Python dependencies via uv (uses pyproject.toml + uv.lock)
+uv-sync:
+	@uv sync
+
+# Project bootstrap
+setup: uv-sync
 
 # Create a new encrypted vault file:
 vault-create: setup
