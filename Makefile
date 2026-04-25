@@ -1,6 +1,6 @@
 .ONESHELL:
 .SHELL := /bin/bash
-.PHONY: setup uv-sync deploy vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-minio setup-filebrowser setup-nginx setup-ttyd setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-logrotate setup-format-external-hdd
+.PHONY: setup uv-sync vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-essentials setup-docker setup-docker-registry purge-registry-images setup-filebrowser setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-wireguard setup-fail2ban setup-logrotate setup-format-external-hdd setup-glendza security-status inventory generate-wireguard-peer
 
 ANSIBLE_PASSWORD_FILE=$(shell pwd)/.ansible-vault-password
 KEYS_DIR := $(shell pwd)/keys
@@ -46,14 +46,8 @@ edit-host-secrets:
 
 # --- Playbook Targets ---
 
-setup_ansible:
-	@ansible-playbook playbooks/setup_ansible.yml --ask-become-pass --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
 setup-essentials:
 	@ansible-playbook playbooks/setup_essentials.yml --ask-become-pass --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
-setup-duckdns:
-	@ansible-playbook playbooks/setup_duckdns.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
 setup-docker:
 	@ansible-playbook playbooks/setup_docker.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
@@ -63,12 +57,6 @@ setup-docker-registry:
 
 purge-registry-images:
 	@ansible-playbook playbooks/purge_old_registry_images.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
-setup-nginx:
-	@ansible-playbook playbooks/setup_nginx.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
-setup-ttyd:
-	@ansible-playbook playbooks/setup_ttyd.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
 setup-filebrowser:
 	@ansible-playbook playbooks/setup_filebrowser.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
@@ -85,9 +73,6 @@ setup-tinyauth:
 setup-caddy:
 	@ansible-playbook playbooks/setup_caddy.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
-setup-minio:
-	@ansible-playbook playbooks/setup_minio.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
 setup-wireguard:
 	@ansible-playbook playbooks/setup_wireguard.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
@@ -102,9 +87,6 @@ setup-format-external-hdd:
 
 setup-glendza:
 	@ansible-playbook playbooks/setup_glendza.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
-
-setup-security:
-	@ansible-playbook playbooks/setup_security.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
 security-status:
 	@ansible-playbook playbooks/security_status.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)

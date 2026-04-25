@@ -82,26 +82,20 @@ Each role lives in `roles/<role_name>/`.
 
 ### Playbook Targets
 
-- `make setup_ansible` - bootstrap Ansible/runtime prerequisites on target host.
 - `make setup-essentials` - install base packages and essential host configuration.
-- `make setup-duckdns` - configure dynamic DNS updates via DuckDNS.
 - `make setup-docker` - install and configure Docker engine.
 - `make setup-docker-registry` - deploy private Docker registry service.
 - `make purge-registry-images` - clean old images from private registry.
-- `make setup-nginx` - deploy/configure Nginx stack (if used).
-- `make setup-ttyd` - deploy browser terminal service (`ttyd`).
 - `make setup-filebrowser` - deploy filebrowser service.
 - `make setup-paperless` - deploy paperless-ngx service.
 - `make setup-jellyfin` - deploy Jellyfin media server.
 - `make setup-tinyauth` - deploy tinyauth identity/auth layer.
 - `make setup-caddy` - deploy Caddy reverse proxy and TLS config.
-- `make setup-minio` - deploy MinIO object storage service.
 - `make setup-wireguard` - deploy and configure WireGuard VPN.
 - `make setup-fail2ban` - deploy fail2ban jails and firewall actions.
 - `make setup-logrotate` - configure log rotation policy.
 - `make setup-format-external-hdd` - format and prepare external HDD.
 - `make setup-glendza` - deploy the main Glendza app/service.
-- `make setup-security` - apply consolidated security hardening tasks.
 - `make security-status` - run security status/check playbook.
 - `make inventory` - print decrypted Ansible inventory as YAML.
 - `make generate-wireguard-peer` - generate WireGuard peer/client configuration.
