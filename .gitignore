@@ -1,0 +1,9 @@
+# Virtual Environment:
+.venv/*
+
+# Ansible password:
+.ansible-vault-password
+
+# Local data:
+.wireguard-peers/*
+dump/*

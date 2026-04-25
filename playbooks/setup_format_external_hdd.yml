@@ -1,0 +1,33 @@
+---
+- name: Format external HDD
+  hosts: setup
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    format_external_hdd_device: "/dev/sda"
+    format_external_hdd_partition_table_label: "gpt"
+    format_external_hdd_filesystem: "ext4"
+    format_external_hdd_mount_opts: "defaults"
+    format_external_hdd_partitions:
+      - name: "docker_repo"
+        number: 1
+        start: "0%"
+        end: "100GB"
+        label: "docker_repo"
+        mount_path: "/mnt/docker_repo"
+      - name: "general_storage"
+        number: 2
+        start: "100GB"
+        end: "150GB"
+        label: "general_storage"
+        mount_path: "/mnt/general_storage"
+      - name: "jellyfin_data"
+        number: 3
+        start: "150GB"
+        end: "100%"
+        label: "jellyfin_data"
+        mount_path: "/mnt/jellyfin_data"
+  roles:
+    - role: format_external_hdd

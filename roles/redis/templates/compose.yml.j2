@@ -1,0 +1,14 @@
+services:
+  redis:
+    image: docker.io/library/redis:7
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - {{ data_volume }}:/data
+    networks:
+      - {{ network }}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

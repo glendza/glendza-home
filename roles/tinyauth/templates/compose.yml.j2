@@ -1,0 +1,23 @@
+services:
+  tinyauth:
+    container_name: tinyauth
+    image: {{ tinyauth_image_repository }}:{{ tinyauth_image_tag }}
+    restart: unless-stopped
+    env_file: {{ env_file }}
+    volumes:
+      - {{ data_volume }}:/data
+{% if tinyauth_docker_networks is defined %}
+    networks:
+{% for network in tinyauth_docker_networks %}
+      - {{ network }}
+{% endfor %}
+{% endif %}
+
+{% if tinyauth_docker_networks is defined %}
+networks:
+{% for network in tinyauth_docker_networks %}
+  {{ network }}:
+    driver: bridge
+    external: true
+{% endfor %}
+{% endif %}

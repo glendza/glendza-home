@@ -1,0 +1,61 @@
+- name: "Ensure the necessary directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ filebrowser_service_directory }}"
+    - "{{ filebrowser_db_volume }}"
+    - "{{ filebrowser_config_volume }}"
+    - "{{ filebrowser_log_directory }}"
+
+
+
+- name: Ensure config directory exists
+  ansible.builtin.file:
+    path: "{{ filebrowser_config_volume }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: Generate settings.json file
+  ansible.builtin.template:
+    src: settings.json.j2
+    dest: "{{ filebrowser_config_volume }}/settings.json"
+    mode: "0644"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_user }}"
+  become: true
+
+- name: Ensure settings.json has correct permissions
+  ansible.builtin.file:
+    path: "{{ filebrowser_config_volume }}/settings.json"
+    mode: "0644"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_user }}"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ filebrowser_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    network: "{{ docker_network }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: filebrowser
+    project_src: "{{ filebrowser_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    pull: always
+    state: present

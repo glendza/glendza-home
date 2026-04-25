@@ -1,0 +1,25 @@
+---
+# Wireguard Configuration
+wireguard_enabled: true
+wireguard_image: "lscr.io/linuxserver/wireguard:latest"
+wireguard_port: 51820
+wireguard_internal_subnet: "10.13.13.0"
+wireguard_allowed_ips: "0.0.0.0/0"
+wireguard_persistent_keepalive: 25
+wireguard_config_directory: /srv/docker/volumes/wireguard
+wireguard_peer_dns: "1.1.1.1"
+wireguard_peer_allowed_ips: "0.0.0.0/0"
+wireguard_timezone: "Etc/UTC"
+wireguard_server_url: ""
+
+# Container Configuration
+wireguard_user_id: 1000
+wireguard_group_id: 1000
+wireguard_service_directory: /srv/docker/services/wireguard
+
+# Required Configuration (no defaults - must be set)
+# wireguard_peers: []  # List of peer configurations
+# wireguard_networks: []  # List of networks to connect to
+# wireguard_server_private_key: ""  # Server private key
+# wireguard_server_public_key: ""  # Server public key
+# wireguard_server_endpoint: ""  # Server public endpoint

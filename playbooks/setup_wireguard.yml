@@ -1,0 +1,44 @@
+---
+- name: Setup Wireguard VPN
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: wireguard
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        wireguard_enabled: "{{ wireguard.enabled }}"
+        wireguard_service_directory: "{{ wireguard.service_directory }}"
+        wireguard_config_directory: "{{ wireguard.config_directory }}"
+        wireguard_network: "{{ wireguard.networks[0] | default('glendza_home_server') }}"
+        wireguard_server_private_key: "{{ wireguard.server_private_key }}"
+        wireguard_server_public_key: "{{ wireguard.server_public_key }}"
+        wireguard_server_endpoint: "{{ wireguard.server_endpoint }}"
+        wireguard_peers: "{{ wireguard.peers }}"
+        wireguard_internal_subnet: "{{ wireguard.internal_subnet }}"
+        wireguard_port: "{{ wireguard.port }}"
+        wireguard_allowed_ips: "{{ wireguard.allowed_ips }}"
+        wireguard_persistent_keepalive: "{{ wireguard.persistent_keepalive }}"
+        wireguard_peer_dns: "{{ wireguard.peer_dns }}"
+        wireguard_peer_allowed_ips: "{{ wireguard.peer_allowed_ips }}"
+        wireguard_timezone: "{{ wireguard.timezone }}"
+        wireguard_user_id: "{{ wireguard.user_id }}"
+        wireguard_group_id: "{{ wireguard.group_id }}"
+        wireguard_networks: "{{ wireguard.networks }}"

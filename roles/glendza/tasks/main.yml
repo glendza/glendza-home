@@ -1,0 +1,114 @@
+---
+- name: "Ensure the glendza service directory exists"
+  ansible.builtin.file:
+    path: "{{ glendza_service_directory }}"
+    state: directory
+    owner: "{{ glendza_docker_user }}"
+    group: "{{ glendza_docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: "Ensure the glendza data directory exists: {{ glendza_data_volume }}"
+  ansible.builtin.file:
+    path: "{{ glendza_data_volume }}"
+    state: directory
+    owner: "{{ glendza_user_gid }}"
+    group: "{{ glendza_group_gid }}"
+    mode: "0755"
+  become: true
+  when: glendza_data_volume is defined
+
+- name: "Ensure logs directory exists and has correct ownership: {{ glendza_logs_volume }}"
+  ansible.builtin.file:
+    path: "{{ glendza_logs_volume }}"
+    state: directory
+    owner: "{{ glendza_user_gid }}"
+    group: "{{ glendza_group_gid }}"
+    mode: "0755"
+  become: true
+  when: glendza_logs_volume is defined
+
+- name: "Ensure static directory exists and has correct ownership: {{ glendza_static_volume }}"
+  ansible.builtin.file:
+    path: "{{ glendza_static_volume }}"
+    state: directory
+    owner: "{{ glendza_user_gid }}"
+    group: "{{ glendza_group_gid }}"
+    mode: "0755"
+  become: true
+  when: glendza_static_volume is defined
+
+- name: "Generate the .env file"
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ glendza_service_directory }}/.env"
+    mode: "0644"
+  become: true
+
+- name: "Generate compose file"
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ glendza_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    env_file: "{{ glendza_service_directory }}/.env"
+
+- name: "Login to Docker registry"
+  community.docker.docker_login:
+    username: "{{ glendza_registry_username }}"
+    password: "{{ glendza_registry_password }}"
+    registry: "{{ glendza_registry_url | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}"
+  when: glendza_registry_auth_enabled | bool
+  register: docker_login_result
+  failed_when: docker_login_result.failed
+
+- name: "Verify Docker login"
+  ansible.builtin.debug:
+    msg: "Docker login result: {{ docker_login_result }}"
+  when: glendza_registry_auth_enabled | bool
+
+- name: "Compose up"
+  community.docker.docker_compose_v2:
+    project_name: "{{ glendza_project_name }}"
+    project_src: "{{ glendza_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present
+
+- name: "Run Django migrations"
+  community.docker.docker_container_exec:
+    container: "{{ glendza_container_name }}"
+    command: gmanage migrate --verbosity 2
+    chdir: /app
+  register: migrate_output
+  ignore_errors: true
+
+- name: "Show migration output"
+  ansible.builtin.debug:
+    msg: "{{ migrate_output.stdout_lines }}"
+
+- name: "Check if migration failed"
+  ansible.builtin.fail:
+    msg: "Migration failed! See above."
+  when: migrate_output.rc != 0 or migrate_output.stdout_lines | select("search", "Error") | list | length > 0
+
+- name: "Collect static files"
+  community.docker.docker_container_exec:
+    container: "{{ glendza_container_name }}"
+    command: gmanage collectstatic --noinput
+    chdir: /app
+  register: collectstatic_output
+  ignore_errors: true
+
+- name: "Show collectstatic output"
+  ansible.builtin.debug:
+    msg: "{{ collectstatic_output.stdout_lines }}"
+
+- name: "Check if collectstatic failed"
+  ansible.builtin.fail:
+    msg: "Collectstatic failed! See above."
+  when: collectstatic_output.rc != 0 or collectstatic_output.stdout_lines | select("search", "Error") | list | length > 0

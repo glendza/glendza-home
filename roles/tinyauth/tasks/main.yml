@@ -1,0 +1,48 @@
+- name: "Ensure the necessary tinyauth directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ tinyauth_service_directory }}"
+    - "{{ tinyauth_data_volume }}"
+
+- name: "Generate the .env file"
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ tinyauth_service_directory }}/.env"
+    mode: "0644"
+  vars:
+    app_url: "{{ tinyauth_app_url }}"
+    users: "{{ tinyauth_users | map(attribute='username') | zip(tinyauth_users |
+      map(attribute='password_hash')) | map('join', ':') | join(',') }}"
+    github_client_id: "{{ tinyauth_github_oauth_client_id }}"
+    github_client_secret: "{{ tinyauth_github_oauth_client_secret }}"
+    oauth_whitelist: "{{ tinyauth_oauth_whitelist | join(',') }}"
+    oauth_auto_redirect: "{{ tinyauth_oauth_auto_redirect }}"
+    database_path: "{{ tinyauth_database_path }}"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ tinyauth_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    env_file: "{{ (tinyauth_service_directory, '.env') | path_join }}"
+    data_volume: "{{ tinyauth_data_volume }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: tinyauth
+    project_src: "{{ tinyauth_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

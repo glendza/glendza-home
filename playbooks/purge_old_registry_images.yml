@@ -1,0 +1,148 @@
+---
+- name: Purge Old Docker Registry Images
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    registry_host: "{{ ansible_default_ipv4.address }}"
+    registry_port: "{{ docker_registry.port | default(5000) }}"
+    registry_url: "http://{{ registry_host }}:{{ registry_port }}"
+    days_old: 5
+    dry_run: false  # Set to true for testing without deleting
+  tasks:
+    - name: Ensure required Python packages are installed
+      ansible.builtin.pip:
+        name:
+          - requests
+          - python-dateutil
+        state: present
+
+    - name: Get registry authentication credentials
+      set_fact:
+        registry_username: "{{ docker_registry.auth_username | default('admin') }}"
+        registry_password: "{{ docker_registry.auth_password | default('password') }}"
+      when: docker_registry.auth_enabled | default(false)
+
+    - name: Get list of all repositories from registry
+      uri:
+        url: "{{ registry_url }}/v2/_catalog"
+        method: GET
+        user: "{{ registry_username | default(omit) }}"
+        password: "{{ registry_password | default(omit) }}"
+        force_basic_auth: "{{ docker_registry.auth_enabled | default(false) }}"
+        status_code: [200, 401]
+      register: catalog_response
+      retries: 3
+      delay: 5
+      until: catalog_response is succeeded
+
+    - name: Display catalog response for debugging
+      debug:
+        var: catalog_response
+        verbosity: 1
+
+    - name: Fail if unable to access registry
+      fail:
+        msg: "Unable to access Docker Registry at {{ registry_url }}. Response: {{ catalog_response.status }}"
+      when: catalog_response.status != 200
+
+    - name: Get tags for each repository
+      uri:
+        url: "{{ registry_url }}/v2/{{ item }}/tags/list"
+        method: GET
+        user: "{{ registry_username | default(omit) }}"
+        password: "{{ registry_password | default(omit) }}"
+        force_basic_auth: "{{ docker_registry.auth_enabled | default(false) }}"
+        status_code: [200, 404]
+      register: tags_response
+      loop: "{{ catalog_response.json.repositories | default([]) }}"
+      retries: 3
+      delay: 5
+      until: tags_response is succeeded
+
+    - name: Get manifest for each tag to check creation date
+      uri:
+        url: "{{ registry_url }}/v2/{{ item.item }}/manifests/{{ item.json.tags | default([]) | first }}"
+        method: GET
+        headers:
+          Accept: "application/vnd.docker.distribution.manifest.v2+json"
+        user: "{{ registry_username | default(omit) }}"
+        password: "{{ registry_password | default(omit) }}"
+        force_basic_auth: "{{ docker_registry.auth_enabled | default(false) }}"
+        status_code: [200, 404]
+      register: manifest_response
+      loop: "{{ tags_response.results | selectattr('status', 'equalto', 200) | list }}"
+      when: 
+        - item.status == 200
+        - item.json.tags | length > 0
+      retries: 3
+      delay: 5
+      until: manifest_response is succeeded
+
+    - name: Calculate image ages and identify old images
+      set_fact:
+        old_images: "{{ old_images | default([]) + [{'repo': item.item.item, 'tag': item.item.json.tags | first, 'digest': item.json.config.digest, 'created': (ansible_date_time.epoch | int - (item.json.history | map(attribute='created') | map('strptime', '%Y-%m-%dT%H:%M:%S.%fZ') | map('strftime', '%s') | map('int') | max) / 86400) | round(0) | int}] }}"
+      loop: "{{ manifest_response.results | selectattr('status', 'equalto', 200) | list }}"
+      when: 
+        - item.status == 200
+        - item.json.config is defined
+        - item.json.history is defined
+        - (ansible_date_time.epoch | int - (item.json.history | map(attribute='created') | map('strptime', '%Y-%m-%dT%H:%M:%S.%fZ') | map('strftime', '%s') | map('int') | max) / 86400) | round(0) | int > days_old
+
+    - name: Display old images found
+      debug:
+        msg: "Found {{ old_images | length }} images older than {{ days_old }} days"
+        verbosity: 1
+
+    - name: Show old images details
+      debug:
+        var: old_images
+        verbosity: 1
+
+    - name: Delete old images (dry run mode)
+      debug:
+        msg: "DRY RUN: Would delete {{ item.repo }}:{{ item.tag }} ({{ item.created }} days old)"
+      loop: "{{ old_images }}"
+      when: dry_run
+
+    - name: Delete old images (actual deletion)
+      uri:
+        url: "{{ registry_url }}/v2/{{ item.repo }}/manifests/{{ item.digest }}"
+        method: DELETE
+        user: "{{ registry_username | default(omit) }}"
+        password: "{{ registry_password | default(omit) }}"
+        force_basic_auth: "{{ docker_registry.auth_enabled | default(false) }}"
+        status_code: [202, 404, 401]
+      loop: "{{ old_images }}"
+      when: 
+        - not dry_run
+        - old_images | length > 0
+      retries: 3
+      delay: 5
+      until: item is succeeded
+
+    - name: Run registry garbage collection
+      docker_container:
+        name: docker_registry
+        image: registry:{{ docker_registry.image_version | default('2') }}
+        command: "registry garbage-collect /etc/docker/registry/config.yml"
+        state: started
+        auto_remove: true
+        volumes:
+          - "{{ docker_registry.storage_path | default('/srv/docker/volumes/docker_registry') }}:/var/lib/registry"
+          - "{{ docker_registry.service_directory | default('/srv/docker/services/docker_registry') }}/config.yml:/etc/docker/registry/config.yml"
+        networks:
+          - name: "{{ docker_registry.network | default('glendza_home_server') }}"
+      when: 
+        - not dry_run
+        - old_images | length > 0
+
+    - name: Display summary
+      debug:
+        msg: |
+          Registry cleanup completed:
+          - Total images processed: {{ (manifest_response.results | selectattr('status', 'equalto', 200) | list | length) | default(0) }}
+          - Images older than {{ days_old }} days: {{ old_images | length | default(0) }}
+          - Images deleted: {{ (old_images | length) if not dry_run else 0 }}
+          - Mode: {{ 'DRY RUN' if dry_run else 'ACTUAL DELETION' }}

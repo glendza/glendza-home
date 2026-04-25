@@ -1,0 +1,33 @@
+---
+- name: Install logrotate package
+  ansible.builtin.package:
+    name: logrotate
+    state: present
+  become: true
+  when: logrotate_install_package
+
+- name: Ensure cron service is enabled and running
+  ansible.builtin.service:
+    name: cron
+    state: started
+    enabled: true
+  become: true
+  when: logrotate_ensure_cron
+
+- name: Configure log rotation for services
+  ansible.builtin.template:
+    src: logrotate.conf.j2
+    dest: "/etc/logrotate.d/{{ item.name }}"
+    mode: "0644"
+    backup: true
+  become: true
+  loop: "{{ logrotate_services }}"
+  when: logrotate_services | length > 0
+
+- name: Test logrotate configurations
+  ansible.builtin.command: "logrotate -d /etc/logrotate.d/{{ item.name }}"
+  changed_when: false
+  become: true
+  loop: "{{ logrotate_services }}"
+  when: logrotate_services | length > 0
+  failed_when: false

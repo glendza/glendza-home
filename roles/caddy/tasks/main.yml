@@ -1,0 +1,60 @@
+- name: "Ensure the necessary caddy directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ caddy_service_directory }}"
+    - "{{ caddy_volumes_directory }}"
+    - "{{ caddy_config_directory }}"
+    - "{{ caddy_data_directory }}"
+    - "{{ caddy_log_directory }}"
+
+- name: "Validate Cloudflare DNS-01 challenge configuration"
+  ansible.builtin.assert:
+    that:
+      - caddy_cloudflare_api_token is defined
+      - caddy_cloudflare_api_token | string | length > 0
+    fail_msg: "Cloudflare DNS-01 is enabled but caddy_cloudflare_api_token is missing."
+  when: caddy_use_cloudflare_dns_challenge
+
+- name: Generate Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_service_directory }}/Caddyfile"
+    mode: "0644"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+  become: true
+
+- name: Generate Dockerfile for Caddy build
+  ansible.builtin.template:
+    src: Dockerfile.j2
+    dest: "{{ caddy_service_directory }}/Dockerfile"
+    mode: "0644"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ caddy_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    network: "{{ caddy_network }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: caddy
+    project_src: "{{ caddy_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    pull: always
+    state: present

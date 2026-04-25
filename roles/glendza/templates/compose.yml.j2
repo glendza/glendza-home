@@ -1,0 +1,42 @@
+services:
+  glendza:
+    image: {{ glendza_registry_url }}/{{ glendza_image_name }}:{{ glendza_image_tag | default('latest') }}
+    container_name: {{ glendza_container_name }}
+    restart: {{ glendza_restart_policy }}
+    user: "{{ glendza_user_gid }}:{{ glendza_group_gid }}"
+    volumes:
+{% if glendza_data_volume is defined %}
+      - {{ glendza_data_volume }}:/app/data
+{% endif %}
+{% if glendza_logs_volume is defined %}
+      - {{ glendza_logs_volume }}:/app/logs
+{% endif %}
+{% if glendza_static_volume is defined %}
+      - {{ glendza_static_volume }}:/app/static
+{% endif %}
+    env_file: {{ env_file }}
+    environment:
+      - TZ={{ glendza_timezone }}
+    networks:
+{% if glendza_networks is defined and glendza_networks | length > 0 %}
+{% for network in glendza_networks %}
+      - {{ network }}
+{% endfor %}
+{% else %}
+      - {{ glendza_docker_networks }}
+{% endif %}
+
+networks:
+{% if glendza_networks is defined and glendza_networks | length > 0 %}
+{% for network in glendza_networks %}
+  {{ network }}:
+    driver: bridge
+    external: true
+{% endfor %}
+{% else %}
+{% for network in glendza_docker_networks %}
+  {{ network }}:
+    driver: bridge
+    external: true
+{% endfor %}
+{% endif %}

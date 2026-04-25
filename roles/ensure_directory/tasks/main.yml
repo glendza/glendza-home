@@ -1,0 +1,12 @@
+- name: Ensure the directory exists
+  ansible.builtin.file:
+    path: "{{ directory_path }}"
+    state: directory
+    owner: "{{ owner_user | default('root') }}"
+    group: "{{ owner_group | default('root') }}"
+    mode: "{{ directory_mode | default('0755') }}"
+    recurse: "{{ recurse | default(true) }}"
+  become: "{{ become | default(false) }}"
+  when: directory_path is defined and directory_path != ''
+  tags:
+    - mkdir

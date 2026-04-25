@@ -1,0 +1,13 @@
+---
+filebrowser_user_id: 1000
+filebrowser_group_id: 1000
+filebrowser_log_directory: "/var/log/filebrowser"
+filebrowser_service_directory: "/opt/filebrowser"
+filebrowser_db_volume: "/opt/filebrowser/db"
+filebrowser_config_volume: "/opt/filebrowser/config"
+
+# Filebrowser configuration
+filebrowser_port: 80
+filebrowser_base_url: ""
+filebrowser_address: ""
+filebrowser_log_output: "stdout"

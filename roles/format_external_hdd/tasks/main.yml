@@ -1,0 +1,41 @@
+- name: Create partition table
+  community.general.parted:
+    device: "{{ format_external_hdd_device }}"
+    label: "{{ format_external_hdd_partition_table_label }}"
+    state: present
+
+- name: Create partitions
+  community.general.parted:
+    device: "{{ format_external_hdd_device }}"
+    number: "{{ item.number }}"
+    part_type: primary
+    fs_type: "{{ format_external_hdd_filesystem }}"
+    state: present
+    start: "{{ item.start }}"
+    end: "{{ item.end }}"
+  loop: "{{ format_external_hdd_partitions }}"
+
+- name: Format partitions
+  community.general.filesystem:
+    fstype: "{{ format_external_hdd_filesystem }}"
+    dev: "{{ format_external_hdd_device }}{{ 'p' if (format_external_hdd_device |
+      regex_search('[0-9]$')) else '' }}{{ item.number }}"
+    label: "{{ item.label }}"
+  loop: "{{ format_external_hdd_partitions }}"
+
+- name: Create mount points
+  ansible.builtin.file:
+    path: "{{ item.mount_path }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ format_external_hdd_partitions }}"
+
+- name: Mount partitions and persist in fstab
+  community.general.mount:
+    path: "{{ item.mount_path }}"
+    src: "{{ format_external_hdd_device }}{{ 'p' if (format_external_hdd_device |
+      regex_search('[0-9]$')) else '' }}{{ item.number }}"
+    fstype: "{{ format_external_hdd_filesystem }}"
+    opts: "{{ format_external_hdd_mount_opts }}"
+    state: mounted
+  loop: "{{ format_external_hdd_partitions }}"

@@ -1,0 +1,66 @@
+- name: "Ensure the necessary directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ docker_registry_service_directory }}"
+    - "{{ docker_registry_storage_path }}"
+
+- name: "Ensure auth directory exists"
+  ansible.builtin.file:
+    path: "{{ docker_registry_service_directory }}/auth"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  when: docker_registry_auth_enabled
+
+- name: "Create htpasswd file if it doesn't exist"
+  ansible.builtin.copy:
+    content: >-
+      {{ docker_registry_auth_username }}:
+      {{ docker_registry_auth_password_hash }}
+    dest: "{{ docker_registry_service_directory }}/auth/htpasswd"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0644"
+  become: true
+  when: docker_registry_auth_enabled
+
+- name: Configure firewall for Docker Registry
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ item }}"
+    port: "{{ docker_registry_port }}"
+    proto: tcp
+  become: true
+  loop: "{{ docker_registry_allowed_subnets }}"
+
+- name: Generate registry config file
+  ansible.builtin.template:
+    src: registry/config.yml.j2
+    dest: "{{ docker_registry_service_directory }}/config.yml"
+    force: true
+    mode: "0644"
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ docker_registry_service_directory }}/compose.yml"
+    mode: "0644"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: docker_registry
+    project_src: "{{ docker_registry_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

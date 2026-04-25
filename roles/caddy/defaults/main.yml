@@ -1,0 +1,38 @@
+---
+caddy_image: "caddy:2"
+caddy_container_name: "caddy"
+
+caddy_service_directory: "/opt/caddy"
+caddy_volumes_directory: "/opt/caddy/volumes"
+caddy_config_directory: "{{ (caddy_volumes_directory, 'config') | path_join }}"
+caddy_data_directory: "{{ (caddy_volumes_directory, 'data') | path_join }}"
+caddy_log_directory: "/var/log/caddy"
+caddy_access_log_file: "{{ (caddy_log_directory, 'access.log') | path_join }}"
+caddy_log_time_format: "2006-01-02 15:04:05"
+
+caddy_http_port: 80
+caddy_https_port: 443
+caddy_network: "glendza_home_server"
+caddy_manage_public_tls_certificates: true
+caddy_redirect_http_to_https: true
+caddy_use_cloudflare_dns_challenge: false
+caddy_dns_challenge_propagation_delay: "30s"
+caddy_dns_challenge_propagation_timeout: "-1"
+
+caddy_oidc_auth_domain: "auth.localhost"
+caddy_oidc_auth_upstream: "tinyauth:3000"
+caddy_oidc_auth_uri: "/api/auth/caddy"
+
+# Public routes do not require auth.
+# Example:
+# caddy_public_sites:
+#   - host: "public.example.com"
+#     upstream: "filebrowser:80"
+caddy_public_sites: []
+
+# Protected routes use OIDC auth forward_auth.
+# Example:
+# caddy_protected_sites:
+#   - host: "app.example.com"
+#     upstream: "paperless-ngx:8000"
+caddy_protected_sites: []

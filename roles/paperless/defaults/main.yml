@@ -1,0 +1,7 @@
+---
+paperless_ocr_language: "srp+srp_latn+eng"
+paperless_ocr_languages: "srp srp-latn eng"
+
+# Log directory configuration
+paperless_log_directory: "/var/log/paperless"
+paperless_log_volume: "{{ paperless_log_directory }}:/var/log/paperless"

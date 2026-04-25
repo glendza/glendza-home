@@ -1,0 +1,21 @@
+---
+# Fail2ban configuration defaults
+
+# Default ban time in seconds (1 hour)
+fail2ban_bantime: 3600
+
+# Time window to count failures in seconds (10 minutes)
+fail2ban_findtime: 600
+
+# Maximum number of failures before ban
+fail2ban_maxretry: 5
+
+# Backend to use
+# Use "auto" so file-based logpath jails (Docker service logs) work reliably.
+fail2ban_backend: auto
+
+# IP addresses to ignore (never ban)
+fail2ban_ignoreip: "127.0.0.1/8 ::1" # Don't ban from localhost
+
+# Default empty services dictionary (will be overridden by playbook)
+fail2ban_services: {}

@@ -1,0 +1,98 @@
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: true
+
+- name: Ensure /etc/apt/keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Get Ubuntu codename
+  ansible.builtin.shell: ". /etc/os-release && echo ${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+  register: ubuntu_codename
+  changed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+- name: Print Ubuntu codename
+  ansible.builtin.debug:
+    msg: "Ubuntu codename is {{ ubuntu_codename.stdout }}"
+  when: ansible_distribution == "Ubuntu"
+
+- name: Get the architecture of the machine
+  ansible.builtin.command: dpkg --print-architecture
+  register: dpkg_architecture
+  changed_when: false
+
+- name: Show the architecture
+  ansible.builtin.debug:
+    msg: "The architecture of the system is {{ dpkg_architecture.stdout }}"
+
+- name: Show the system architecture
+  ansible.builtin.debug:
+    msg: "The system architecture is {{ dpkg_architecture.stdout }}"
+
+- name: Add Docker repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    content: >
+      deb [arch={{ dpkg_architecture.stdout }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu {{ ubuntu_codename.stdout }} stable
+    mode: '0644'
+
+- name: Read Docker repository file
+  ansible.builtin.slurp:
+    src: /etc/apt/sources.list.d/docker.list
+  register: docker_list_file
+
+- name: Show the content of the Docker repository file
+  ansible.builtin.debug:
+    msg: "{{ docker_list_file.content | b64decode }}"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Ensure the docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add the user to the docker group
+  ansible.builtin.user:
+    name: "{{ docker_user }}"
+    groups: docker
+    append: true
+
+- name: Enable and start Docker service
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Enable and start Containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true
+    state: started

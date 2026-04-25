@@ -1,0 +1,7 @@
+---
+jellyfin_image_tag: "latest"
+jellyfin_use_gpu: true
+jellyfin_log_directory: "/var/log/jellyfin"
+jellyfin_service_directory: "/opt/jellyfin"
+jellyfin_volumes_directory: "/opt/jellyfin/volumes"
+jellyfin_media_directory: "/mnt/media"

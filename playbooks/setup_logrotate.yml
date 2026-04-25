@@ -1,0 +1,26 @@
+---
+- name: Setup Logrotate
+  hosts: deploy
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  roles:
+    - role: logrotate
+      vars:
+        logrotate_services:
+          - name: "jellyfin"
+            log_directory: "/var/log/jellyfin"
+            fail2ban_jails: ["jellyfin"]
+          - name: "filebrowser"
+            log_directory: "/var/log/filebrowser"
+            fail2ban_jails: ["filebrowser"]
+          - name: "paperless"
+            log_directory: "/var/log/paperless"
+            fail2ban_jails: ["paperless"]
+          - name: "caddy"
+            log_directory: "/var/log/caddy"
+            fail2ban_jails: []

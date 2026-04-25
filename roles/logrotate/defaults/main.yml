@@ -1,0 +1,28 @@
+---
+# Logrotate role defaults
+
+# Default log rotation settings
+logrotate_frequency: "daily"
+logrotate_rotate: 7
+logrotate_compress: true
+logrotate_delaycompress: true
+logrotate_missingok: true
+logrotate_notifempty: true
+
+# Default file permissions
+logrotate_create_mode: "644"
+logrotate_create_owner: "{{ docker_user | default('root') }}"
+logrotate_create_group: "{{ docker_group | default('root') }}"
+
+# Services to configure log rotation for
+# This should be overridden in playbooks
+logrotate_services: []
+
+# Whether to reload fail2ban after rotation
+logrotate_reload_fail2ban: true
+
+# Whether to install logrotate package
+logrotate_install_package: true
+
+# Whether to ensure cron service is running
+logrotate_ensure_cron: true

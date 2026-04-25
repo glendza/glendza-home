@@ -1,0 +1,51 @@
+# Cursor Rules for Glendza Home Project
+
+## Role Development Rules
+
+### Defaults and Configuration
+- **Defaults should exist ONLY in `defaults/main.yml` for every role**
+- **NO hardcoded default values in Jinja templates**
+- **Templates should reference variables without `| default()` filters**
+- **All configuration values must be defined in defaults or passed as variables**
+- **Only provide sensible defaults - required values should have no defaults**
+- **Security-sensitive values (keys, endpoints, peers) should be required, not defaulted**
+
+### Template Guidelines - CRITICAL RULE
+- **NEVER use `{{ variable_name | default('value') }}` in templates**
+- **NEVER put any default values in Jinja templates**
+- **ALL default values MUST go in `defaults/main.yml`**
+- **Templates should ONLY use `{{ variable_name }}`**
+- **Templates are for structure, NOT for configuration**
+- **If you need a default value, add it to defaults/main.yml, not the template**
+
+### Playbook Guidelines - CRITICAL RULE
+- **NEVER use `| default()` filters in playbooks**
+- **NEVER put default values in playbook variables**
+- **Playbooks should ONLY reference vault/config variables directly**
+- **All defaults belong in role defaults, not playbooks**
+- **Playbooks are for orchestration, NOT for configuration defaults**
+
+### Role Defaults Guidelines - CRITICAL RULE
+- **NEVER put empty strings or non-functional values in role defaults**
+- **NEVER put variables that MUST be provided by playbook/vault in defaults**
+- **Only put sensible, functional defaults in role defaults**
+- **Required variables should have NO defaults and fail fast if missing**
+- **If a variable won't work without being set, don't give it a default**
+
+### Network Configuration
+- **Use arrays for networks** to allow maximum configurability
+- **Support multiple network connections** where applicable
+- **Networks should be configurable** not hardcoded
+
+### Timezone Configuration
+- **Always prefer UTC timezone** in configurations
+- **Use `Etc/UTC` as the default timezone** for all services
+- **Avoid local timezone defaults** unless specifically required by the service
+
+### Documentation Requirements
+- **Always document the configuration structure in README.md**
+- **Include complete `vars/host_secrets.yml` examples** showing exactly what to configure
+- **Show both basic and advanced configuration examples**
+- **Document all required and optional variables**
+- **Provide clear setup steps and usage examples**
+- **Clearly mark required vs optional configuration values**

@@ -1,0 +1,10 @@
+- name: Setup Docker
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+  roles:
+    - docker
+  become: true

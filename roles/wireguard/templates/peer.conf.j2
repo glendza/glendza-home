@@ -1,0 +1,10 @@
+[Interface]
+PrivateKey = {{ peer_private_key }}
+Address = {{ peer_ip }}/24
+DNS = {{ peer_dns }}
+
+[Peer]
+PublicKey = {{ server_public_key }}
+Endpoint = {{ server_endpoint }}
+AllowedIPs = {{ peer_allowed_ips }}
+PersistentKeepalive = {{ peer_persistent_keepalive }}

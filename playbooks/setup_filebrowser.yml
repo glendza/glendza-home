@@ -1,0 +1,33 @@
+---
+- name: Setup Filebrowser
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: filebrowser
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        docker_network: glendza_home_server
+        filebrowser_service_directory: /srv/docker/services/filebrowser
+        filebrowser_volumes_directory: /srv/docker/volumes/filebrowser
+        filebrowser_attached_dirs:
+          - "{{ storages.general }}"
+          - "{{ storages.jellyfin }}"
+        filebrowser_db_volume: /srv/docker/volumes/filebrowser/database
+        filebrowser_config_volume: /srv/docker/volumes/filebrowser/config

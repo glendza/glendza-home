@@ -1,0 +1,7 @@
+---
+system_ssh_port: 22
+system_shell: /bin/bash
+system_essential_packages:
+  - vim
+  - htop
+  - curl

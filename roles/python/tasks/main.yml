@@ -1,0 +1,8 @@
+- name: Ensure Python {{ app_python_version }} dependencies are installed
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - python3-pip
+    - python{{ app_python_version }}
+    - python{{ app_python_version }}-venv

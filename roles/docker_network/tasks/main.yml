@@ -1,0 +1,4 @@
+- name: "Ensure Docker network exists: {{ docker_network_name }}"
+  community.docker.docker_network:
+    name: "{{ docker_network_name }}"
+    state: present

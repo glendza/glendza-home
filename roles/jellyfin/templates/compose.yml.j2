@@ -1,0 +1,21 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:{{ jellyfin_image_tag }}
+    container_name: jellyfin
+    restart: unless-stopped
+    volumes:
+      - {{ config_volume }}:/config # Configuration files
+      - {{ cache_volume }}:/cache # Cache directory
+      - {{ media_volume }}:/data # Media files (e.g., movies, TV shows)
+      - {{ jellyfin_log_directory }}:/var/log/jellyfin
+    networks:
+      - {{ network }}
+{% if use_gpu %}
+    devices:
+      - /dev/dri:/dev/dri
+{% endif %}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

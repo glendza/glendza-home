@@ -1,0 +1,50 @@
+- name: "Ensure the service directory exists {{ jellyfin_service_directory }}"
+  ansible.builtin.file:
+    path: "{{ jellyfin_service_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: "Ensure the volume directory exists {{ jellyfin_volumes_directory }}"
+  ansible.builtin.file:
+    path: "{{ jellyfin_volumes_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: "Ensure the log directory exists {{ jellyfin_log_directory }}"
+  ansible.builtin.file:
+    path: "{{ jellyfin_log_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ jellyfin_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    config_volume: "{{ (jellyfin_volumes_directory, 'config') | path_join }}"
+    cache_volume: "{{ (jellyfin_volumes_directory, 'cache') | path_join }}"
+    media_volume: "{{ jellyfin_media_directory }}"
+    network: "{{ docker_network }}"
+    use_gpu: "{{ jellyfin_use_gpu }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: jellyfin
+    project_src: "{{ jellyfin_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

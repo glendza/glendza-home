@@ -1,0 +1,36 @@
+---
+- name: Setup Tinyauth
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: tinyauth
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        tinyauth_docker_networks:
+          - glendza_home_server
+        tinyauth_service_directory: /srv/docker/services/tinyauth
+        tinyauth_data_volume: /srv/docker/volumes/tinyauth/data
+        tinyauth_image_tag: v5
+        tinyauth_app_url: "{{ tinyauth.app_url }}"
+        tinyauth_users: "{{ tinyauth.users }}"
+        tinyauth_github_oauth_client_id: "{{ tinyauth.github_oauth_client_id }}"
+        tinyauth_github_oauth_client_secret: "{{ tinyauth.github_oauth_client_secret }}"
+        tinyauth_oauth_whitelist: "{{ tinyauth.oauth_whitelist }}"
+        tinyauth_oauth_auto_redirect: "github"

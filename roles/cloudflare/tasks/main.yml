@@ -1,0 +1,79 @@
+- name: Ensure dependencies are installed
+  ansible.builtin.package:
+    name: "{{ item }}"
+  loop:
+    - curl
+    - jq
+
+- name: Get Cloudflare DNS Record ID
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name={{ domain }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_token }}"
+      Content-Type: "application/json"
+    return_content: true
+  register: dns_record_response
+  changed_when: false
+
+- name: Extract DNS Record ID using jq
+  ansible.builtin.command:
+    cmd: "echo '{{ dns_record_response.content | to_json }}' | jq -r '.result[0].id'"
+  register: dns_record_id_raw
+  changed_when: false
+
+- name: Set fact for DNS Record ID
+  ansible.builtin.set_fact:
+    dns_record_id: "{{ dns_record_id_raw.stdout }}"
+
+- name: Update A record in Cloudflare
+  ansible.builtin.uri:
+    url: "{{ cloudflare_api_base_url }}/zones/{{ cloudflare_zone_id }}/dns_records/{{ dns_record_id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_token }}"
+      Content-Type: "application/json"
+    body: >
+      {
+        "type": "A",
+        "name": "{{ dns_record_name }}",
+        "content": "{{ new_ip_address }}",
+        "ttl": 1,
+        "proxied": false
+      }
+    status_code: 200
+  register: cloudflare_update_response
+
+- name: Ensure the A record was updated successfully
+  ansible.builtin.assert:
+    that:
+      - cloudflare_update_response.status == 200
+    msg: "Failed to update Cloudflare A record. Response: {{ cloudflare_update_response.content }}"
+
+- name: Ensure Cloudfront cron job is set
+  ansible.builtin.cron:
+    name: "Cloudflare Update"
+    minute: "*/5"  # Run every 5 minutes
+    job: "curl -s -X PUT '{{ cloudflare_api_base_url }}/zones/{{ cloudflare_zone_id }}/dns_records/{{ dns_record_id }}' \
+        -H 'Authorization: Bearer {{ cloudflare_api_token }}' \
+        -H 'Content-Type: application/json' \
+        --data '{\"type\":\"A\",\"name\":\"{{ dns_record_name }}\",\"content\":\"{{ new_ip_address }}\",\"ttl\":1,\"proxied\":false}'"
+    state: present
+    user: "{{ user }}"
+
+- name: Check if Cloudflare cron job is present
+  ansible.builtin.command:
+    cmd: crontab -u "{{ user }}" -l
+  register: cron_jobs
+  changed_when: false
+  failed_when: false
+
+- name: Print cron job status
+  ansible.builtin.debug:
+    var: cron_jobs.stdout
+
+- name: Verify if Cloudflare cron job is present
+  ansible.builtin.assert:
+    that:
+      - "'Cloudflare Update' in cron_jobs.stdout"
+    msg: "Cloudflare cron job is not set!"

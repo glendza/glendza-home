@@ -1,0 +1,55 @@
+---
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: fail2ban
+    state: present
+
+- name: Ensure fail2ban is running and enabled
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: Ensure log directories exist for enabled jails
+  ansible.builtin.file:
+    path: "{{ item.value.logpath | dirname }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ fail2ban_services | dict2items }}"
+  when: item.value.enabled | bool
+
+- name: Ensure concrete log files exist for enabled jails
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ item.value.logpath }}"
+    force: false
+    mode: "0644"
+  loop: "{{ fail2ban_services | dict2items }}"
+  when:
+    - item.value.enabled | bool
+    - "'*' not in item.value.logpath"
+    - "'?' not in item.value.logpath"
+    - "'[' not in item.value.logpath"
+
+- name: Deploy jail.local config
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: "0644"
+    backup: true
+  notify: Reload fail2ban configuration
+
+- name: Deploy custom filters
+  ansible.builtin.template:
+    src: filter.conf.j2
+    dest: "/etc/fail2ban/filter.d/{{ item.key }}.conf"
+    mode: "0644"
+    backup: true
+  loop: "{{ fail2ban_services | dict2items }}"
+  when: item.value.custom_filter
+  notify: Reload fail2ban configuration
+
+- name: Restart fail2ban every role run
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted

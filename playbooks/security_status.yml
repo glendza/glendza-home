@@ -1,0 +1,54 @@
+---
+- name: Check server security status
+  hosts: homeserver
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check fail2ban status
+      ansible.builtin.command: fail2ban-client status
+      register: fail2ban_status
+      changed_when: false
+
+    - name: Display fail2ban status
+      ansible.builtin.debug:
+        msg: "{{ fail2ban_status.stdout_lines }}"
+
+    - name: Check UFW status
+      ansible.builtin.command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+
+    - name: Display UFW status
+      ansible.builtin.debug:
+        msg: "{{ ufw_status.stdout_lines }}"
+
+    - name: Check SSH configuration
+      ansible.builtin.command: sshd -T | grep -E "(permitrootlogin|passwordauthentication|pubkeyauthentication|maxauthtries)"
+      register: ssh_config
+      changed_when: false
+      ignore_errors: true
+
+    - name: Display SSH security settings
+      ansible.builtin.debug:
+        msg: "{{ ssh_config.stdout_lines }}"
+
+    - name: Check recent failed login attempts
+      ansible.builtin.command: grep "Failed password" /var/log/auth.log | tail -10
+      register: failed_logins
+      changed_when: false
+      ignore_errors: true
+
+    - name: Display recent failed login attempts
+      ansible.builtin.debug:
+        msg: "{{ failed_logins.stdout_lines }}"
+
+    - name: Check fail2ban banned IPs
+      ansible.builtin.command: fail2ban-client banned
+      register: banned_ips
+      changed_when: false
+      ignore_errors: true
+
+    - name: Display banned IPs
+      ansible.builtin.debug:
+        msg: "{{ banned_ips.stdout_lines }}"

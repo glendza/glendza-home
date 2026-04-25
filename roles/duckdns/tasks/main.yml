@@ -1,0 +1,41 @@
+- name: Ensure curl is installed
+  ansible.builtin.package:
+    name: curl
+    state: present
+
+- name: Update DuckDNS domain
+  ansible.builtin.uri:
+    url: "https://www.duckdns.org/update?domains={{ duckdns.domain }}&token={{ duckdns.token }}"
+    method: GET
+    return_content: true
+  register: duckdns_update_response
+
+- name: Print DuckDNS response
+  ansible.builtin.debug:
+    var: duckdns_update_response
+
+
+- name: Ensure DuckDNS cron job is set
+  ansible.builtin.cron:
+    name: "DuckDNS Update"
+    minute: "*/5"  # Run every 5 minutes
+    job: "curl -s '{{ duckdns_url }}?domains={{ duckdns.domain }}&token={{ duckdns.token }}'"
+    state: present
+    user: "{{ user }}"
+
+- name: Check if DuckDNS cron job is present
+  ansible.builtin.command:
+    cmd: crontab -u "{{ user }}" -l
+  register: cron_jobs
+  changed_when: false
+  failed_when: false
+
+- name: Print cron job status
+  ansible.builtin.debug:
+    var: cron_jobs.stdout
+
+- name: Verify if DuckDNS cron job is present
+  ansible.builtin.assert:
+    that:
+      - "'DuckDNS Update' in cron_jobs.stdout"
+    msg: "DuckDNS cron job is not set!"

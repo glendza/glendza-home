@@ -1,0 +1,67 @@
+- name: Update packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install esssential packages
+  ansible.builtin.apt:
+    name: "{{ system_essential_packages }}"
+  when: ansible_distribution == "Ubuntu"
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#?PasswordAuthentication yes"
+    line: "PasswordAuthentication no"
+  register: sshd_config_password
+
+- name: Configure SSH port
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#?Port "
+    line: "Port {{ system_ssh_port }}"
+  register: sshd_config_port
+
+- name: Enable passwordless sudo for user "{{ username }}"
+  ansible.builtin.lineinfile:
+    dest: /etc/sudoers
+    regexp: "^%wheel"
+    line: "{{ username }} ALL=(ALL) NOPASSWD: ALL"
+    validate: "/usr/sbin/visudo -cf %s"
+
+- name: Restart SSH service if changed
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted
+  when: sshd_config_password.changed or sshd_config_port.changed
+
+- name: Ensure the non-root user is created
+  ansible.builtin.user:
+    name: "{{ username }}"
+    password: "{{ password | password_hash('sha512') }}"
+    groups:
+      - sudo
+      - users
+    append: true
+    shell: "{{ system_shell }}"
+    update_password: on_create
+    createhome: true
+    state: present
+
+- name: Suppress login message
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.hushlogin"
+    mode: "0644"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    modification_time: preserve
+    access_time: preserve
+    state: touch
+
+- name: "Add the SSH public key to the user's authorized_keys"
+  ansible.posix.authorized_key:
+    user: "{{ username }}"
+    state: present
+    key: "{{ lookup('file', playbook_dir + './../keys/{{ username }}.pub') }}"
+    path: "/home/{{ username }}/.ssh/authorized_keys"

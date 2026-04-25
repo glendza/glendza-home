@@ -1,0 +1,27 @@
+- name: Setup Python
+  hosts: setup
+  roles:
+    - python
+  become: true
+
+- name: Setup server
+  hosts: setup
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    system_ssh_port: "{{ ssh.port }}"
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  roles:
+    - system
+  become: true
+
+- name: "Setup DuckDNS"
+  hosts: setup
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    user: "{{ username }}"
+  roles:
+    - duckdns
+  become: true

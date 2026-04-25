@@ -1,0 +1,52 @@
+---
+- name: Setup Glendza Service
+  hosts: homeserver
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  tasks:
+    - name: "Create required Docker networks"
+      ansible.builtin.include_role:
+        name: docker_network
+      vars:
+        docker_network_name: "{{ item }}"
+      loop: "{{ glendza.docker_networks }}"
+      when: glendza.docker_networks is defined and glendza.docker_networks | length > 0
+
+    - name: "Include glendza role"
+      ansible.builtin.include_role:
+        name: glendza
+      vars:
+        glendza_docker_user: "{{ username }}"
+        glendza_docker_group: "{{ username }}"
+        glendza_docker_networks: "{{ glendza.docker_networks }}"
+        glendza_service_directory: "/srv/docker/services/glendza"
+        glendza_data_volume: "/srv/docker/volumes/glendza/data"
+        glendza_logs_volume: "/var/log/glendza"
+        glendza_static_volume: "/srv/docker/volumes/glendza/static"
+        glendza_registry_url: "{{ glendza.registry_url }}"
+        glendza_image_name: "{{ glendza.image_name }}"
+        glendza_image_tag: "{{ glendza.image_tag }}"
+        glendza_registry_auth_enabled: "{{ glendza.registry_auth_enabled | default(false) }}"
+        glendza_registry_username: "{{ glendza.registry_username }}"
+        glendza_registry_password: "{{ glendza.registry_password }}"
+        glendza_secret_key: "{{ glendza.secret_key }}"
+        glendza_allowed_hosts: "{{ glendza.allowed_hosts }}"
+        glendza_csrf_trusted_origins: "{{ glendza.csrf_trusted_origins }}"
+        glendza_debug: "{{ glendza.debug }}"
+        glendza_log_level: "{{ glendza.log_level }}"
+        glendza_static_url: "{{ glendza.static_url }}"
+        glendza_media_url: "{{ glendza.media_url }}"
+        glendza_db_location: "{{ glendza.db_location }}"
+        glendza_django_admin_url: "{{ glendza.django_admin_url }}"
+        glendza_wagtail_admin_url: "{{ glendza.wagtail_admin_url }}"
+        glendza_email_backend: "{{ glendza.email_backend }}"
+        glendza_email_host: "{{ glendza.email_host }}"
+        glendza_email_port: "{{ glendza.email_port }}"
+        glendza_email_use_tls: "{{ glendza.email_use_tls }}"
+        glendza_email_host_user: "{{ glendza.email_host_user }}"
+        glendza_email_host_password: "{{ glendza.email_host_password }}"
+        glendza_email_use_ssl: "{{ glendza.email_use_ssl }}"
+        glendza_recaptcha_public_key: "{{ glendza.recaptcha_public_key }}"
+        glendza_recaptcha_private_key: "{{ glendza.recaptcha_private_key }}"
+        glendza_networks: "{{ glendza.docker_networks }}"

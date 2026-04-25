@@ -1,0 +1,11 @@
+[Interface]
+PrivateKey = {{ wireguard_server_private_key }}
+Address = {{ wireguard_internal_subnet | replace('.0/24', '.1/24') }}
+ListenPort = {{ wireguard_port }}
+
+{% for peer in wireguard_peers %}
+# Peer: {{ peer.name }}
+[Peer]
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ peer.ip }}/32
+{% endfor %}

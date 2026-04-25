@@ -1,0 +1,49 @@
+---
+- name: Generate Wireguard Peer Configurations
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  
+  vars:
+    # Output directory (from vault or default)
+    output_dir: "{{ wireguard.peer_output_dir | default('../.wireguard-peers') }}"
+    
+  tasks:
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+    
+    - name: Generate peer configurations for all peers
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../roles/wireguard/templates/peer.conf.j2"
+        dest: "{{ output_dir }}/{{ item.name }}.conf"
+        mode: "0644"
+      loop: "{{ wireguard.peers }}"
+      vars:
+        peer_private_key: "{{ item.private_key }}"
+        peer_ip: "{{ item.ip }}"
+        peer_dns: "{{ wireguard.peer_dns | default('1.1.1.1') }}"
+        server_public_key: "{{ wireguard.server_public_key }}"
+        server_endpoint: "{{ wireguard.server_endpoint }}:{{ wireguard.port | default(51820) }}"
+        peer_allowed_ips: "{{ wireguard.peer_allowed_ips | default('0.0.0.0/0') }}"
+        peer_persistent_keepalive: "{{ wireguard.persistent_keepalive | default(25) }}"
+    
+    - name: Display generated peer files
+      ansible.builtin.debug:
+        msg: |
+          === GENERATED PEER FILES ===
+          Output directory: {{ output_dir }}
+          {% for peer in wireguard.peers %}
+          - {{ peer.name }}.conf (IP: {{ peer.ip }})
+          {% endfor %}
+          
+          === NEXT STEPS ===
+          1. Copy the generated .conf files to your peer machines
+          2. Ensure peer public keys are in your server's wg0.conf
+          3. Restart the Wireguard service on your server
+          4. Connect from peers using: sudo wg-quick up ./peer-name.conf

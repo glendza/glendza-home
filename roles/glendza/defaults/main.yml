@@ -1,0 +1,39 @@
+---
+# Docker service configuration
+glendza_project_name: glendza
+glendza_container_name: glendza
+glendza_restart_policy: unless-stopped
+glendza_docker_networks: []
+glendza_user_gid: 1234
+glendza_group_gid: 1234
+
+# Docker registry
+glendza_registry_auth_enabled: false
+
+# Timezone configuration (prefer UTC as per project rules)
+glendza_timezone: "Etc/UTC"
+
+# Network configuration - supports multiple networks
+glendza_networks: []
+
+# Django settings defaults
+glendza_debug: false
+glendza_log_level: INFO
+
+# Static and media files defaults
+glendza_static_url: /static/
+glendza_media_url: /media/
+
+# Database defaults
+glendza_db_location: /app/data/glendza.db
+
+# Admin routes defaults
+glendza_django_admin_url: admin/
+glendza_wagtail_admin_url: cms/
+
+# Email settings defaults
+glendza_email_backend: django.core.mail.backends.smtp.EmailBackend
+glendza_email_host: smtp.gmail.com
+glendza_email_port: 587
+glendza_email_use_tls: true
+glendza_email_use_ssl: false

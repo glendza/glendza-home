@@ -1,0 +1,26 @@
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: {{ caddy_container_name }}
+    restart: unless-stopped
+{% if caddy_use_cloudflare_dns_challenge %}
+    environment:
+      - CLOUDFLARE_API_TOKEN={{ caddy_cloudflare_api_token }}
+{% endif %}
+    ports:
+      - "{{ caddy_http_port }}:80"
+      - "{{ caddy_https_port }}:443"
+    volumes:
+      - {{ caddy_service_directory }}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - {{ caddy_config_directory }}:/config
+      - {{ caddy_data_directory }}:/data
+      - {{ caddy_log_directory }}:/var/log/caddy
+    networks:
+      - {{ network }}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

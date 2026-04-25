@@ -1,0 +1,35 @@
+- name: "Ensure the necessary directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ wireguard_service_directory }}"
+    - "{{ wireguard_config_directory }}"
+
+- name: Generate wireguard server config
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: "{{ wireguard_config_directory }}/wg0.conf"
+    mode: "0644"
+  when: wireguard_enabled
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ wireguard_service_directory }}/compose.yml"
+    mode: "0644"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: wireguard
+    project_src: "{{ wireguard_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

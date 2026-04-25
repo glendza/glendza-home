@@ -1,0 +1,19 @@
+services:
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    environment:
+      DOZZLE_AUTH_PROVIDER: forward-proxy
+      DOZZLE_LEVEL: "{{ dozzle_level }}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - {{ data_volume }}:/data
+    expose:
+      - 8080
+    networks:
+      - {{ network }}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

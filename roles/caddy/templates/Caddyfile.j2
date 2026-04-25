@@ -1,0 +1,78 @@
+{
+{% if not caddy_manage_public_tls_certificates %}
+  auto_https off
+{% elif not caddy_redirect_http_to_https %}
+  auto_https disable_redirects
+{% endif %}
+  log {
+{% if caddy_access_log_file is defined and caddy_access_log_file is not none %}
+    output file {{ caddy_access_log_file }}
+{% else %}
+    output stdout
+{% endif %}
+    format console {
+      time_format "{{ caddy_log_time_format }}"
+    }
+  }
+  servers {
+    trusted_proxies static private_ranges
+  }
+}
+
+(common_access_log) {
+  log {
+{% if caddy_access_log_file is defined and caddy_access_log_file is not none %}
+    output file {{ caddy_access_log_file }}
+{% else %}
+    output stdout
+{% endif %}
+    format console {
+      time_format "{{ caddy_log_time_format }}"
+    }
+  }
+}
+
+{{ caddy_oidc_auth_domain }} {
+  import common_access_log
+{% if caddy_manage_public_tls_certificates and caddy_use_cloudflare_dns_challenge %}
+  tls {
+    dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    propagation_delay {{ caddy_dns_challenge_propagation_delay }}
+    propagation_timeout {{ caddy_dns_challenge_propagation_timeout }}
+  }
+{% endif %}
+  reverse_proxy {{ caddy_oidc_auth_upstream }}
+}
+
+{% for site in caddy_public_sites %}
+{{ site.host }} {
+  import common_access_log
+{% if caddy_manage_public_tls_certificates and caddy_use_cloudflare_dns_challenge %}
+  tls {
+    dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    propagation_delay {{ caddy_dns_challenge_propagation_delay }}
+    propagation_timeout {{ caddy_dns_challenge_propagation_timeout }}
+  }
+{% endif %}
+  reverse_proxy {{ site.upstream }}
+}
+
+{% endfor %}
+{% for site in caddy_protected_sites %}
+{{ site.host }} {
+  import common_access_log
+{% if caddy_manage_public_tls_certificates and caddy_use_cloudflare_dns_challenge %}
+  tls {
+    dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    propagation_delay {{ caddy_dns_challenge_propagation_delay }}
+    propagation_timeout {{ caddy_dns_challenge_propagation_timeout }}
+  }
+{% endif %}
+  forward_auth {{ caddy_oidc_auth_upstream }} {
+    uri {{ caddy_oidc_auth_uri }}
+    copy_headers Remote-User Remote-Name Remote-Email
+  }
+  reverse_proxy {{ site.upstream }}
+}
+
+{% endfor %}

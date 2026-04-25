@@ -1,0 +1,16 @@
+---
+# Docker Registry Configuration
+docker_registry_image_version: "2"
+docker_registry_port: 5000
+docker_registry_timezone: "Etc/UTC"
+docker_registry_log_level: "info"
+docker_registry_delete_enabled: false
+
+# Registry Authentication (optional - have sensible defaults)
+docker_registry_auth_enabled: false
+docker_registry_auth_type: "htpasswd"
+docker_registry_auth_htpasswd_file: /auth/htpasswd
+
+# Notifications (optional)
+docker_registry_notifications_enabled: false
+docker_registry_notification_url: "http://example.com/webhook"

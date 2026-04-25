@@ -1,0 +1,37 @@
+---
+- name: Setup Caddy
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: caddy
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        caddy_network: glendza_home_server
+        caddy_manage_public_tls_certificates: true
+        caddy_redirect_http_to_https: false
+        caddy_use_cloudflare_dns_challenge: true
+        caddy_cloudflare_api_token: "{{ cloudflare.token }}"
+        caddy_service_directory: /srv/docker/services/caddy
+        caddy_volumes_directory: /srv/docker/volumes/caddy
+        caddy_oidc_auth_domain: "{{ caddy.oidc_auth_domain }}"
+        caddy_oidc_auth_upstream: "{{ caddy.oidc_auth_upstream }}"
+        caddy_oidc_auth_uri: "{{ caddy.oidc_auth_uri }}"
+        caddy_public_sites: "{{ caddy.public_sites }}"
+        caddy_protected_sites: "{{ caddy.protected_sites }}"

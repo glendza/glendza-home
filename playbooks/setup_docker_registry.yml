@@ -1,0 +1,44 @@
+---
+- name: Setup Docker Registry
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: docker_registry
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        # Pass all settings from vault
+        docker_registry_image_version: "{{ docker_registry.image_version }}"
+        docker_registry_port: "{{ docker_registry.port }}"
+        docker_registry_timezone: "{{ docker_registry.timezone }}"
+        docker_registry_log_level: "{{ docker_registry.log_level }}"
+        docker_registry_delete_enabled: "{{ docker_registry.delete_enabled }}"
+        docker_registry_service_directory: "{{ docker_registry.service_directory }}"
+        docker_registry_storage_path: "{{ docker_registry.storage_path }}"
+        docker_registry_network: "{{ docker_registry.network }}"
+        docker_registry_http_secret: "{{ docker_registry.http_secret }}"
+        docker_registry_auth_enabled: "{{ docker_registry.auth_enabled }}"
+        docker_registry_auth_type: "{{ docker_registry.auth_type }}"
+        docker_registry_auth_username: "{{ docker_registry.auth_username }}"
+        docker_registry_auth_password_hash: "{{ docker_registry.auth_password | bcrypt('sha256') }}"
+        docker_registry_auth_htpasswd_file: "{{ docker_registry.auth_htpasswd_file }}"
+        docker_registry_notifications_enabled: "{{ docker_registry.notifications_enabled }}"
+        docker_registry_notification_url: "{{ docker_registry.notification_url }}"
+        docker_registry_allowed_subnets: "{{ docker_registry.allowed_subnets }}"

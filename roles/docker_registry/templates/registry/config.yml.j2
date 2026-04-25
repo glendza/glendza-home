@@ -1,0 +1,37 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+  level: {{ docker_registry_log_level }}
+
+storage:
+  filesystem:
+    rootdirectory: /var/lib/registry
+  delete:
+    enabled: {{ docker_registry_delete_enabled }}
+
+http:
+  addr: ":{{ docker_registry_port }}"
+  {% if docker_registry_http_secret -%}
+  secret: "{{ docker_registry_http_secret }}"
+  {% endif -%}
+  headers:
+    X-Content-Type-Options: [nosniff]
+
+{% if docker_registry_auth_enabled %}
+auth:
+  htpasswd:
+    realm: basic-realm
+    path: "{{ docker_registry_auth_htpasswd_file }}"
+{% endif %}
+
+{% if docker_registry_notifications_enabled %}
+notifications:
+  endpoints:
+    - name: alistener
+      disabled: false
+      url: "{{ docker_registry_notification_url }}"
+      timeout: 1s
+      threshold: 10
+      backoff: 1s
+{% endif %}

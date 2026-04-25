@@ -1,0 +1,14 @@
+- name: Setup ttyd
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+  become: true
+  roles:
+    - role: ttyd
+      vars:
+        # Optional: Override default port
+        # ttyd_port: 8080
+        # Optional: Override version (use "latest" for latest or specific version like "1.7.7")
+        # ttyd_version: latest

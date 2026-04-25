@@ -1,0 +1,19 @@
+{{ item.log_directory }}/*.log {
+    {{ logrotate_frequency }}
+    {{ 'missingok' if logrotate_missingok else '' }}
+    rotate {{ logrotate_rotate }}
+    {{ 'compress' if logrotate_compress else '' }}
+    {{ 'delaycompress' if logrotate_delaycompress else '' }}
+    {{ 'notifempty' if logrotate_notifempty else '' }}
+    create {{ logrotate_create_mode }} {{ logrotate_create_owner }} {{ logrotate_create_group }}
+{% if logrotate_reload_fail2ban and item.fail2ban_jails %}
+    postrotate
+        # Reload fail2ban if it's monitoring these logs
+        if command -v fail2ban-client >/dev/null 2>&1; then
+{% for jail in item.fail2ban_jails %}
+            fail2ban-client reload {{ jail }} >/dev/null 2>&1 || true
+{% endfor %}
+        fi
+    endscript
+{% endif %}
+}

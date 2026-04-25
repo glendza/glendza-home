@@ -1,0 +1,7 @@
+---
+tinyauth_port: 3399
+# TODO: switch to ghcr.io/tinyauthapp/tinyauth once the registry image is publicly pullable.
+tinyauth_image_repository: ghcr.io/steveiliop56/tinyauth
+tinyauth_image_tag: v5
+tinyauth_data_volume: "/opt/tinyauth/data"
+tinyauth_database_path: "/data/tinyauth.db"

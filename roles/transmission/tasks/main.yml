@@ -1,0 +1,40 @@
+- name: "Ensure the service directory exists {{ transmission_service_directory }}"
+  ansible.builtin.file:
+    path: "{{ transmission_service_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: "Ensure the volume directory exists {{ transmission_volumes_directory }}"
+  ansible.builtin.file:
+    path: "{{ transmission_volumes_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ transmission_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    tz: "{{ transmission_tz }}"
+    config_volume: "{{ (transmission_volumes_directory, 'config') | path_join }}"
+    watch_volume: "{{ (transmission_volumes_directory, 'watch') | path_join }}"
+    media_volume: "{{ transmission_media_directory }}"
+    network: "{{ docker_network }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: transmission
+    project_src: "{{ transmission_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

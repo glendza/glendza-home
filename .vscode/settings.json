@@ -1,0 +1,38 @@
+{
+  "[json]": {
+    "editor.quickSuggestions": {
+      "strings": true,
+    },
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+  },
+  "[jsonc]": {
+    "editor.quickSuggestions": {
+      "strings": true,
+    },
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+  },
+  "[yaml]": {
+    "editor.quickSuggestions": {
+      "strings": true,
+    },
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true,
+  },
+  "[ansible]": {
+    "editor.quickSuggestions": {
+      "strings": true,
+    },
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true,
+  },
+  "python.terminal.activateEnvironment": true,
+  "ansible.python.interpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "ansible.validation.lint.enabled": true,
+  "ansible.ansible.path": "${workspaceFolder}.venv/bin/ansible",
+  "files.associations": {
+    "*plays.yml": "ansible",
+    "*init.yml": "yaml",
+  }
+}

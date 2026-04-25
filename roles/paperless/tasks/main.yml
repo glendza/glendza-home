@@ -1,0 +1,47 @@
+- name: "Ensure the necessary paperless-ngx directories exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ paperless_service_directory }}"
+    - "{{ paperless_volumes_directory }}"
+    - "{{ paperless_media_volume | default((paperless_volumes_directory, 'media') | path_join) }}"
+    - "{{ paperless_export_volume | default((paperless_volumes_directory, 'export') | path_join) }}"
+    - "{{ paperless_consume_volume | default((paperless_volumes_directory, 'consume') | path_join) }}"
+    - "{{ paperless_log_directory }}"
+
+- name: "Generate the .env file"
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ paperless_service_directory }}/.env"
+    mode: "0644"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ paperless_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    data_volume: "{{ (paperless_volumes_directory, 'data') | path_join }}"
+    media_volume: "{{ paperless_media_volume | default((paperless_volumes_directory, 'media') | path_join) }}"
+    export_volume: "{{ paperless_export_volume | default((paperless_volumes_directory, 'export') | path_join) }}"
+    consume_volume: "{{ paperless_consume_volume | default((paperless_volumes_directory, 'consume') | path_join) }}"
+    env_file: "{{ paperless_service_directory }}/.env"
+    network: "{{ docker_network }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: paperless-ngx
+    project_src: "{{ paperless_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

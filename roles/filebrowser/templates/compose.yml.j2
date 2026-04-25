@@ -1,0 +1,19 @@
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    restart: unless-stopped
+    volumes:
+{% for dir in filebrowser_attached_dirs %}
+      - {{ dir }}:/srv/{{ dir | basename }}
+{% endfor %}
+      - {{ filebrowser_db_volume }}:/database/
+      - {{ filebrowser_config_volume }}:/config/
+      - {{ filebrowser_log_directory }}:/var/log/filebrowser
+    networks:
+      - {{ network }}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

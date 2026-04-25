@@ -1,0 +1,19 @@
+services:
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
+    restart: unless-stopped
+    volumes:
+      - {{ data_volume }}:/usr/src/paperless/data
+      - {{ paperless_media_volume }}:/usr/src/paperless/media
+      - {{ paperless_export_volume }}:/usr/src/paperless/export
+      - {{ paperless_consume_volume }}:/usr/src/paperless/consume
+      - {{ paperless_log_volume }} # Log files for fail2ban monitoring
+    env_file: {{ env_file }}
+    networks:
+      - {{ network }}
+
+networks:
+  {{ network }}:
+    driver: bridge
+    external: true

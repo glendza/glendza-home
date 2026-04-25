@@ -1,0 +1,37 @@
+- name: "Ensure the service directory exists {{ dozzle_service_directory }}"
+  ansible.builtin.file:
+    path: "{{ dozzle_service_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: "Ensure the volume directory exists {{ dozzle_volumes_directory }}"
+  ansible.builtin.file:
+    path: "{{ dozzle_volumes_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  become: true
+
+- name: Generate compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ dozzle_service_directory }}/compose.yml"
+    mode: "0644"
+  vars:
+    data_volume: "{{ (dozzle_volumes_directory, 'data') | path_join }}"
+    network: "{{ docker_network }}"
+
+- name: Compose up
+  community.docker.docker_compose_v2:
+    project_name: dozzle
+    project_src: "{{ dozzle_service_directory }}"
+    files:
+      - compose.yml
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present

@@ -1,0 +1,9 @@
+[Definition]
+failregex =
+{% for line in item.value.failregex.split('\n') if line | trim %}
+  {{ line }}
+{% endfor %}
+ignoreregex =
+{% for line in item.value.ignoreregex.split('\n') if line | trim %}
+  {{ line }}
+{% endfor %}

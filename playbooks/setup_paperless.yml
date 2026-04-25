@@ -1,0 +1,35 @@
+---
+- name: Setup Paperless-ngx
+  hosts: deploy
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+  roles:
+    - role: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+        recurse: true
+
+    - role: docker_network
+      vars:
+        docker_network_name: glendza_home_server
+
+    - role: paperless
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        docker_network: glendza_home_server
+        paperless_service_directory: /srv/docker/services/paperless
+        paperless_volumes_directory: /srv/docker/volumes/paperless
+        paperless_secret_key: "{{ paperless.secret_key }}"
+        paperless_url: "{{ paperless.public_url }}"
+        paperless_time_zone: "{{ paperless.time_zone }}"
+        paperless_redis_url: "{{ paperless.redis_url }}"
+        paperless_media_volume: "{{ [storages.general, 'paperless/media'] | path_join }}"
+        paperless_export_volume: "{{ [storages.general, 'paperless/export'] | path_join }}"
+        paperless_consume_volume: "{{ [storages.general, 'paperless/consume'] | path_join }}"
