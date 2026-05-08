@@ -1,0 +1,15 @@
+---
+# Docker image/runtime
+miniflux_image_repository: "miniflux/miniflux"
+miniflux_restart_policy: "unless-stopped"
+
+# Optional Docker networks
+miniflux_docker_networks: []
+
+# Optional host port mappings
+miniflux_port_mappings: []
+
+# App behavior
+miniflux_run_migrations: true
+miniflux_create_admin: true
+miniflux_healthcheck_enabled: true

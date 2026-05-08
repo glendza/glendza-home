@@ -1,6 +1,6 @@
 .ONESHELL:
 .SHELL := /bin/bash
-.PHONY: setup uv-sync vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-essentials setup-docker setup-docker-registry purge-registry-images setup-filebrowser setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-wireguard setup-fail2ban setup-logrotate setup-format-external-hdd setup-glendza setup-postgres setup-dozzle security-status inventory generate-wireguard-peer
+.PHONY: setup uv-sync vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-essentials setup-docker setup-docker-registry purge-registry-images setup-filebrowser setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-wireguard setup-fail2ban setup-logrotate setup-format-external-hdd setup-glendza setup-postgres setup-dozzle setup-miniflux security-status inventory generate-wireguard-peer
 
 ANSIBLE_PASSWORD_FILE=$(shell pwd)/.ansible-vault-password
 KEYS_DIR := $(shell pwd)/keys
@@ -105,6 +105,9 @@ setup-postgres:
 
 setup-dozzle:
 	@ansible-playbook playbooks/setup_dozzle.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
+setup-miniflux:
+	@ansible-playbook playbooks/setup_miniflux.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
 security-status:
 	@ansible-playbook playbooks/security_status.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)

@@ -1,0 +1,31 @@
+services:
+  miniflux:
+    image: {{ miniflux_image_repository }}:{{ miniflux_image_tag }}
+    container_name: {{ miniflux_container_name }}
+    restart: {{ miniflux_restart_policy }}
+    env_file:
+      - .env
+{% if miniflux_healthcheck_enabled %}
+    healthcheck:
+      test: ["CMD", "/usr/bin/miniflux", "-healthcheck", "auto"]
+{% endif %}
+{% if miniflux_port_mappings | length > 0 %}
+    ports:
+{% for port_mapping in miniflux_port_mappings %}
+      - "{{ port_mapping }}"
+{% endfor %}
+{% endif %}
+{% if miniflux_docker_networks | length > 0 %}
+    networks:
+{% for network in miniflux_docker_networks %}
+      - {{ network }}
+{% endfor %}
+{% endif %}
+
+{% if miniflux_docker_networks | length > 0 %}
+networks:
+{% for network in miniflux_docker_networks %}
+  {{ network }}:
+    external: true
+{% endfor %}
+{% endif %}

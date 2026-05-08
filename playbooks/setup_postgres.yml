@@ -9,6 +9,14 @@
     docker_user: "{{ username }}"
     docker_group: "{{ username }}"
   tasks:
+    - name: Create required Docker networks
+      ansible.builtin.include_role:
+        name: docker_network
+      vars:
+        docker_network_name: "{{ item }}"
+      loop:
+        - glendza_home_server
+
     - name: Deploy Postgres role
       ansible.builtin.include_role:
         name: postgres
@@ -23,6 +31,8 @@
           - "5432:5432"
         postgres_expose_ports:
           - "5432"
+        postgres_docker_networks:
+          - glendza_home_server
         postgres_user: "{{ postgres.user }}"
         postgres_password: "{{ postgres.password }}"
         postgres_managed_users: "{{ postgres.managed_users if 'managed_users' in postgres else [] }}"

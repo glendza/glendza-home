@@ -1,0 +1,33 @@
+---
+- name: Setup Miniflux
+  hosts: deploy
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  tasks:
+    - name: Create required Docker networks
+      ansible.builtin.include_role:
+        name: docker_network
+      vars:
+        docker_network_name: "{{ item }}"
+      loop:
+        - glendza_home_server
+
+    - name: Deploy Miniflux role
+      ansible.builtin.include_role:
+        name: miniflux
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        miniflux_service_directory: /srv/docker/services/miniflux
+        miniflux_image_tag: latest
+        miniflux_container_name: miniflux
+        miniflux_docker_networks:
+          - glendza_home_server
+        miniflux_database_url: "{{ miniflux.database_url }}"
+        miniflux_admin_username: "{{ miniflux.admin_username }}"
+        miniflux_admin_password: "{{ miniflux.admin_password }}"

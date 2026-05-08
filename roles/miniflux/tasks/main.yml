@@ -1,0 +1,66 @@
+---
+- name: Validate required Miniflux runtime inputs
+  ansible.builtin.assert:
+    that:
+      - docker_user is defined
+      - docker_user | string | length > 0
+      - docker_group is defined
+      - docker_group | string | length > 0
+      - miniflux_service_directory is defined
+      - miniflux_service_directory | string | length > 0
+      - miniflux_image_tag is defined
+      - miniflux_image_tag | string | length > 0
+      - miniflux_container_name is defined
+      - miniflux_container_name | string | length > 0
+    fail_msg: >-
+      Set docker_user, docker_group, miniflux_service_directory, miniflux_image_tag,
+      and miniflux_container_name via playbook role vars.
+
+- name: Validate required Miniflux secrets
+  ansible.builtin.assert:
+    that:
+      - miniflux_database_url is defined
+      - miniflux_database_url | string | length > 0
+      - miniflux_admin_username is defined
+      - miniflux_admin_username | string | length > 0
+      - miniflux_admin_password is defined
+      - miniflux_admin_password | string | length > 0
+    fail_msg: >-
+      Set miniflux_database_url, miniflux_admin_username, and
+      miniflux_admin_password (for example via vars/host_secrets.yml).
+
+- name: Ensure Miniflux service directory exists
+  ansible.builtin.file:
+    path: "{{ miniflux_service_directory }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+
+- name: Render Miniflux compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ miniflux_service_directory }}/compose.yml"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0644"
+
+- name: Render Miniflux .env file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ miniflux_service_directory }}/.env"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0640"
+
+- name: Start Miniflux container
+  community.docker.docker_compose_v2:
+    project_name: miniflux
+    project_src: "{{ miniflux_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present
