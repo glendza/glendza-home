@@ -1,0 +1,41 @@
+---
+- name: Setup Dozzle (Docker log viewer)
+  hosts: deploy
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  tasks:
+    - name: Ensure base service path exists
+      ansible.builtin.include_role:
+        name: ensure_directory
+      vars:
+        path: /srv/docker/
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 755
+        recurse: true
+
+    - name: Create required Docker networks
+      ansible.builtin.include_role:
+        name: docker_network
+      vars:
+        docker_network_name: "{{ item }}"
+      loop:
+        - glendza_home_server
+
+    - name: Deploy Dozzle role
+      ansible.builtin.include_role:
+        name: dozzle
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        dozzle_service_directory: /srv/docker/services/dozzle
+        dozzle_data_directory: /srv/docker/volumes/dozzle/data
+        dozzle_image_tag: v10
+        dozzle_container_name: dozzle
+        dozzle_docker_networks:
+          - glendza_home_server

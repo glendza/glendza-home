@@ -1,2 +1,21 @@
 ---
+# Docker image (repository only; tag/name/paths come from the playbook)
+dozzle_image_repository: amir20/dozzle
+dozzle_restart_policy: unless-stopped
+
+# Log verbosity for Dozzle (maps to DOZZLE_LEVEL)
 dozzle_level: info
+
+# When using Caddy or another reverse proxy in front of Dozzle, keep forward-proxy
+# so Dozzle trusts auth headers from the edge proxy.
+dozzle_auth_provider: forward-proxy
+
+# Optional extra environment variables for the container (secret-free tuning).
+dozzle_environment: {}
+
+# Publish host ports (e.g. "8080:8080"); when empty, the UI is only reachable on
+# Docker networks via expose (typical when Caddy connects to dozzle:8080).
+dozzle_port_mappings: []
+
+# Networks must be provided by the playbook (defaults stay empty).
+dozzle_docker_networks: []

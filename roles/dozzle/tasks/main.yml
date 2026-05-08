@@ -1,4 +1,27 @@
-- name: "Ensure the service directory exists {{ dozzle_service_directory }}"
+---
+- name: Validate Dozzle required inputs
+  ansible.builtin.assert:
+    that:
+      - docker_user is defined
+      - docker_user | string | length > 0
+      - docker_group is defined
+      - docker_group | string | length > 0
+      - dozzle_service_directory is defined
+      - dozzle_service_directory | string | length > 0
+      - dozzle_data_directory is defined
+      - dozzle_data_directory | string | length > 0
+      - dozzle_image_tag is defined
+      - dozzle_image_tag | string | length > 0
+      - dozzle_container_name is defined
+      - dozzle_container_name | string | length > 0
+      - dozzle_docker_networks is defined
+      - dozzle_docker_networks | length > 0
+    fail_msg: >-
+      Set docker_user, docker_group, dozzle_service_directory, dozzle_data_directory,
+      dozzle_image_tag, dozzle_container_name, and a non-empty dozzle_docker_networks
+      list (usually via playbooks/setup_dozzle.yml).
+
+- name: Ensure the service directory exists
   ansible.builtin.file:
     path: "{{ dozzle_service_directory }}"
     state: directory
@@ -7,23 +30,23 @@
     mode: "0755"
   become: true
 
-- name: "Ensure the volume directory exists {{ dozzle_volumes_directory }}"
+- name: Ensure the data directory exists
   ansible.builtin.file:
-    path: "{{ dozzle_volumes_directory }}"
+    path: "{{ dozzle_data_directory }}"
     state: directory
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
     mode: "0755"
   become: true
 
-- name: Generate compose file
+- name: Render Dozzle compose file
   ansible.builtin.template:
     src: compose.yml.j2
     dest: "{{ dozzle_service_directory }}/compose.yml"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
     mode: "0644"
-  vars:
-    data_volume: "{{ (dozzle_volumes_directory, 'data') | path_join }}"
-    network: "{{ docker_network }}"
+  become: true
 
 - name: Compose up
   community.docker.docker_compose_v2:
@@ -32,6 +55,7 @@
     files:
       - compose.yml
     check_files_existing: true
+    pull: always
     recreate: always
     remove_orphans: true
     state: present

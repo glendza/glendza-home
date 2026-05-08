@@ -1,19 +1,39 @@
 services:
   dozzle:
-    container_name: dozzle
-    image: amir20/dozzle:latest
+    image: {{ dozzle_image_repository }}:{{ dozzle_image_tag }}
+    container_name: {{ dozzle_container_name }}
+    restart: {{ dozzle_restart_policy }}
     environment:
-      DOZZLE_AUTH_PROVIDER: forward-proxy
-      DOZZLE_LEVEL: "{{ dozzle_level }}"
+      DOZZLE_AUTH_PROVIDER: {{ dozzle_auth_provider }}
+      DOZZLE_LEVEL: {{ dozzle_level }}
+{% if dozzle_environment | length > 0 %}
+{% for key, value in dozzle_environment.items() %}
+      {{ key }}: "{{ value }}"
+{% endfor %}
+{% endif %}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - {{ data_volume }}:/data
+      - {{ dozzle_data_directory }}:/data
+{% if dozzle_port_mappings | length > 0 %}
+    ports:
+{% for port_mapping in dozzle_port_mappings %}
+      - "{{ port_mapping }}"
+{% endfor %}
+{% else %}
     expose:
-      - 8080
+      - "8080"
+{% endif %}
+{% if dozzle_docker_networks | length > 0 %}
     networks:
+{% for network in dozzle_docker_networks %}
       - {{ network }}
+{% endfor %}
+{% endif %}
 
+{% if dozzle_docker_networks | length > 0 %}
 networks:
+{% for network in dozzle_docker_networks %}
   {{ network }}:
-    driver: bridge
     external: true
+{% endfor %}
+{% endif %}
