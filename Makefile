@@ -1,6 +1,6 @@
 .ONESHELL:
 .SHELL := /bin/bash
-.PHONY: setup uv-sync vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-essentials setup-docker setup-docker-registry purge-registry-images setup-filebrowser setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-wireguard setup-fail2ban setup-logrotate setup-format-external-hdd setup-glendza security-status inventory generate-wireguard-peer
+.PHONY: setup uv-sync vault-create vault-edit decrypt view rekey edit-inventory edit-host-secrets setup-essentials setup-docker setup-docker-registry purge-registry-images setup-filebrowser setup-paperless setup-jellyfin setup-tinyauth setup-caddy setup-wireguard setup-fail2ban setup-logrotate setup-format-external-hdd setup-glendza setup-postgres security-status inventory generate-wireguard-peer
 
 ANSIBLE_PASSWORD_FILE=$(shell pwd)/.ansible-vault-password
 KEYS_DIR := $(shell pwd)/keys
@@ -58,6 +58,15 @@ setup-docker-registry:
 purge-registry-images:
 	@ansible-playbook playbooks/purge_old_registry_images.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
+setup-garage:
+	@ansible-playbook playbooks/setup_garage.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
+setup-soju:
+	@ansible-playbook playbooks/setup_soju.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
+setup-actual:
+	@ansible-playbook playbooks/setup_actual.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
 setup-filebrowser:
 	@ansible-playbook playbooks/setup_filebrowser.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
@@ -87,6 +96,12 @@ setup-format-external-hdd:
 
 setup-glendza:
 	@ansible-playbook playbooks/setup_glendza.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
+setup-frp:
+	@ansible-playbook playbooks/setup_frp.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
+
+setup-postgres:
+	@ansible-playbook playbooks/setup_postgres.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)
 
 security-status:
 	@ansible-playbook playbooks/security_status.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)

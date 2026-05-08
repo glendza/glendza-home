@@ -25,12 +25,19 @@
 - **All defaults belong in role defaults, not playbooks**
 - **Playbooks are for orchestration, NOT for configuration defaults**
 
+### Service layout in playbooks (paths and container identity)
+- **Hardcode host paths and fixed runtime identity in `playbooks/setup_<service>.yml`**: service compose directory (e.g. `/srv/docker/services/<service>`), config and data volume directories under `/srv/docker/volumes/<service>/…`, **`image_tag`**, and **`container_name`**, passed as role-prefixed vars—same pattern as `setup_actual.yml` / `setup_paperless.yml`.
+- **Do not store path/identity or non-secret runtime wiring under the secrets key in `vars/host_secrets.yml`** (e.g. service paths, container names, image tags, docker networks, port mappings); secrets files should hold only sensitive values (tokens, passwords, private endpoints, peer keys, bootstrap secrets).
+- **Document in the role README** that paths/image/container are defined in the playbook, and keep `vars/host_secrets.example.yml` aligned (comment or omit duplicated path keys).
+
 ### Role Defaults Guidelines - CRITICAL RULE
 - **NEVER put empty strings or non-functional values in role defaults**
 - **NEVER put variables that MUST be provided by playbook/vault in defaults**
 - **Only put sensible, functional defaults in role defaults**
 - **Required variables should have NO defaults and fail fast if missing**
 - **If a variable won't work without being set, don't give it a default**
+- **Every new role must validate required inputs explicitly in `tasks/main.yml`** (fail fast with `ansible.builtin.assert` before rendering templates or starting services)
+- **Place all validation tasks at the top of `tasks/main.yml`**, before any state-changing tasks (file creation, templating, package install, container/service actions)
 
 ### Network Configuration
 - **Use arrays for networks** to allow maximum configurability
@@ -49,3 +56,6 @@
 - **Document all required and optional variables**
 - **Provide clear setup steps and usage examples**
 - **Clearly mark required vs optional configuration values**
+- **Role READMEs must be role-centric** (role behavior/inputs/outputs), not playbook-centric orchestration docs
+- **Prefer a variables table in each role README** with: variable name, required/optional, secret/non-secret, default, and short description
+- **Start each role README with a short, abstract role description** (what capability it provides), avoid low-level implementation step lists in the intro

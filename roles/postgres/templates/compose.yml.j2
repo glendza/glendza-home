@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: {{ postgres_image_repository }}:{{ postgres_image_tag }}
+    container_name: {{ postgres_container_name }}
+    restart: {{ postgres_restart_policy }}
+{% if postgres_user is defined and postgres_user | string | length > 0 and postgres_password is defined and postgres_password | string | length > 0 %}
+    environment:
+      - POSTGRES_USER={{ postgres_user }}
+      - POSTGRES_PASSWORD={{ postgres_password }}
+{% endif %}
+{% if postgres_data_directory is defined and postgres_data_directory | string | length > 0 %}
+    volumes:
+      - {{ postgres_data_directory }}:/var/lib/postgresql
+{% endif %}
+{% if postgres_port_mappings | length > 0 %}
+    ports:
+{% for port_mapping in postgres_port_mappings %}
+      - "{{ port_mapping }}"
+{% endfor %}
+{% endif %}
+{% if postgres_expose_ports | length > 0 %}
+    expose:
+{% for expose_port in postgres_expose_ports %}
+      - "{{ expose_port }}"
+{% endfor %}
+{% endif %}
+{% if postgres_docker_networks | length > 0 %}
+    networks:
+{% for network in postgres_docker_networks %}
+      - {{ network }}
+{% endfor %}
+{% endif %}
+
+{% if postgres_docker_networks | length > 0 %}
+networks:
+{% for network in postgres_docker_networks %}
+  {{ network }}:
+    external: true
+{% endfor %}
+{% endif %}

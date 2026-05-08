@@ -1,0 +1,22 @@
+---
+# Docker image/runtime
+postgres_image_repository: "postgres"
+postgres_image_tag: "18"
+postgres_container_name: "postgres"
+postgres_restart_policy: "unless-stopped"
+
+# Ports
+postgres_port_mappings:
+  - "5432:5432"
+postgres_expose_ports:
+  - "5432"
+
+# Optional Docker networks
+postgres_docker_networks: []
+
+# Optional database bootstrap/management via community.postgresql
+postgres_admin_host: "127.0.0.1"
+postgres_admin_port: 5432
+postgres_admin_database: "postgres"
+postgres_managed_users: []
+postgres_managed_databases: []

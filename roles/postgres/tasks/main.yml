@@ -1,0 +1,154 @@
+---
+- name: Validate required Postgres directories
+  ansible.builtin.assert:
+    that:
+      - postgres_service_directory is defined
+      - postgres_service_directory | string | length > 0
+      - postgres_data_directory is defined
+      - postgres_data_directory | string | length > 0
+    fail_msg: >-
+      Set postgres_service_directory and postgres_data_directory in the playbook
+      role vars.
+
+- name: Validate required Postgres credentials
+  ansible.builtin.assert:
+    that:
+      - postgres_user is defined
+      - postgres_user | string | length > 0
+      - postgres_password is defined
+      - postgres_password | string | length > 0
+    fail_msg: "Set postgres_user and postgres_password in vars/host_secrets.yml."
+
+- name: Validate managed Postgres users structure
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+      - item.password is defined
+      - item.password | string | length > 0
+    fail_msg: >-
+      Each postgres_managed_users entry must include non-empty "name" and
+      "password".
+  loop: "{{ postgres_managed_users }}"
+  loop_control:
+    label: "{{ item.name if 'name' in item else '?' }}"
+
+- name: Validate managed Postgres databases structure
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+      - item.owner is defined
+      - item.owner | string | length > 0
+    fail_msg: >-
+      Each postgres_managed_databases entry must include non-empty "name" and
+      "owner".
+  loop: "{{ postgres_managed_databases }}"
+  loop_control:
+    label: "{{ item.name if 'name' in item else '?' }}"
+
+- name: Validate managed Postgres database grants
+  ansible.builtin.assert:
+    that:
+      - item.1.user is defined
+      - item.1.user | string | length > 0
+      - item.1.privileges is defined
+      - item.1.privileges | string | length > 0
+    fail_msg: >-
+      Each grants entry must include non-empty "user" and "privileges".
+  loop: "{{ query('subelements', postgres_managed_databases, 'grants', {'skip_missing': True}) }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.user if 'user' in item.1 else '?' }}"
+
+- name: Ensure Postgres directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0755"
+  loop:
+    - "{{ postgres_service_directory }}"
+    - "{{ postgres_data_directory }}"
+
+- name: Render Postgres compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ postgres_service_directory }}/compose.yml"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0644"
+
+- name: Start Postgres container
+  community.docker.docker_compose_v2:
+    project_name: postgres
+    project_src: "{{ postgres_service_directory }}"
+    files:
+      - compose.yml
+    pull: always
+    check_files_existing: true
+    recreate: always
+    remove_orphans: true
+    state: present
+
+- name: Ensure psycopg2 package is installed for community.postgresql modules
+  ansible.builtin.package:
+    name: python3-psycopg2
+    state: present
+  when: postgres_managed_users | length > 0 or postgres_managed_databases | length > 0
+
+- name: Wait for Postgres to accept connections
+  community.postgresql.postgresql_ping:
+    login_host: "{{ postgres_admin_host }}"
+    login_port: "{{ postgres_admin_port }}"
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    db: "{{ postgres_admin_database }}"
+  register: postgres_ping
+  retries: 20
+  delay: 3
+  until: postgres_ping.is_available
+  when: postgres_managed_users | length > 0 or postgres_managed_databases | length > 0
+
+- name: Ensure managed Postgres users exist
+  community.postgresql.postgresql_user:
+    login_host: "{{ postgres_admin_host }}"
+    login_port: "{{ postgres_admin_port }}"
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    role_attr_flags: "{{ item.role_attr_flags if 'role_attr_flags' in item else omit }}"
+    state: present
+  loop: "{{ postgres_managed_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Ensure managed Postgres databases exist
+  community.postgresql.postgresql_db:
+    login_host: "{{ postgres_admin_host }}"
+    login_port: "{{ postgres_admin_port }}"
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+    state: present
+  loop: "{{ postgres_managed_databases }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Ensure managed Postgres database grants are present
+  community.postgresql.postgresql_privs:
+    login_host: "{{ postgres_admin_host }}"
+    login_port: "{{ postgres_admin_port }}"
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    db: "{{ postgres_admin_database }}"
+    type: database
+    objs: "{{ item.0.name }}"
+    roles: "{{ item.1.user }}"
+    privs: "{{ item.1.privileges }}"
+    state: present
+  loop: "{{ query('subelements', postgres_managed_databases, 'grants', {'skip_missing': True}) }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.user }}"

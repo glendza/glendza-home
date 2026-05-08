@@ -1,0 +1,29 @@
+---
+- name: Setup Postgres
+  hosts: deploy
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/host_secrets.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_user: "{{ username }}"
+    docker_group: "{{ username }}"
+  tasks:
+    - name: Deploy Postgres role
+      ansible.builtin.include_role:
+        name: postgres
+      vars:
+        docker_user: "{{ username }}"
+        docker_group: "{{ username }}"
+        postgres_service_directory: /srv/docker/services/postgres
+        postgres_data_directory: /srv/docker/volumes/postgres/data
+        postgres_image_tag: "18"
+        postgres_container_name: postgres
+        postgres_port_mappings:
+          - "5432:5432"
+        postgres_expose_ports:
+          - "5432"
+        postgres_user: "{{ postgres.user }}"
+        postgres_password: "{{ postgres.password }}"
+        postgres_managed_users: "{{ postgres.managed_users if 'managed_users' in postgres else [] }}"
+        postgres_managed_databases: "{{ postgres.managed_databases if 'managed_databases' in postgres else [] }}"
