@@ -59,8 +59,10 @@ Each role lives in `roles/<role_name>/`.
 - [`roles/jellyfin`](roles/jellyfin): media server deployment.
 - [`roles/logrotate`](roles/logrotate): log retention and rotation settings.
 - [`roles/paperless`](roles/paperless): paperless-ngx deployment.
+- [`roles/postgres`](roles/postgres): PostgreSQL deployment and optional DB/user/grant management.
 - [`roles/python`](roles/python): Python/runtime setup helpers.
 - [`roles/redis`](roles/redis): Redis deployment/configuration.
+- [`roles/miniflux`](roles/miniflux): Miniflux RSS reader deployment (Docker).
 - [`roles/system`](roles/system): base system bootstrap/tuning.
 - [`roles/tinyauth`](roles/tinyauth): authentication gateway.
 - [`roles/transmission`](roles/transmission): torrent client deployment.
@@ -86,6 +88,8 @@ Each role lives in `roles/<role_name>/`.
 - `make setup-docker` - install and configure Docker engine.
 - `make setup-docker-registry` - deploy private Docker registry service.
 - `make purge-registry-images` - clean old images from private registry.
+- `make setup-postgres` - deploy PostgreSQL service and optional managed users/databases.
+- `make setup-miniflux` - deploy Miniflux RSS reader service.
 - `make setup-filebrowser` - deploy filebrowser service.
 - `make setup-paperless` - deploy paperless-ngx service.
 - `make setup-jellyfin` - deploy Jellyfin media server.

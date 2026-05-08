@@ -51,6 +51,7 @@
 
 ### Documentation Requirements
 - **Always document the configuration structure in README.md**
+- **When adding a new service/role, update root `README.md`** (roles list and Make/playbook target list) so project docs stay in sync
 - **Include complete `vars/host_secrets.yml` examples** showing exactly what to configure
 - **Show both basic and advanced configuration examples**
 - **Document all required and optional variables**

@@ -25,6 +25,9 @@ Follow these rules exactly:
    - `Makefile`:
      - add `setup-<service_slug>` to `.PHONY`
      - add a `setup-<service_slug>` target that runs `ansible-playbook playbooks/setup_<service_slug>.yml --vault-password-file $(ANSIBLE_PASSWORD_FILE)`
+   - root `README.md`:
+     - add the new role under the Roles section
+     - add `make setup-<service_slug>` under Playbook Targets
    - `vars/host_secrets.example.yml` with a complete example structure under `<secrets_key>:`
 3. Keep naming consistent with existing roles:
    - role vars prefixed with `<service_slug>_`
